@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head">
+<meta charset="UTF-8" />
+<title th:text="${titulo}">Insert title here</title>
+<link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
+<link rel="stylesheet" th:href="@{/css/datatables.min.css}" />
+</head>
+<body>
+
+	<header th:fragment="header">
+		<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+			<a class="navbar-brand" href="#">AVATAR</a>
+			<button class="navbar-toggler" type="button" data-toggle="collapse"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse">
+				<ul class="navbar-nav mr-auto">
+					<li class="nav-item active"><a class="nav-link" href="#">HOME</a>
+						<li class="nav-item">
+						<a class="nav-link" href="#about"
+							th:href="@{/index}">Index</a>
+						</li>
+				</ul>
+			</div>
+		</nav>
+	</header>
+	<div class="container">
+		<h3 th:text="${titulo}"></h3>
+		<div class="form-responsive col-sm-12">
+			<form id="formulario_prueba">
+				<table>
+					<tr>
+						<td>Name</td>
+						<td><input id="name" type="text"/></td>
+					</tr>
+					<tr>
+						<td>Height</td>
+						<td><input id="height" type="text"/></td>
+					</tr>
+					<tr>
+						<td>Mass</td>
+						<td><input id="mass" type="text"/></td>
+					</tr>
+					<tr>
+						<td>hair color</td>
+						<td><input id="hair_color" type="text"/></td>
+					</tr>
+					<tr>
+						<td>gender</td>
+						<td><input id="gender" type="text"/></td>
+					</tr>
+					<tr>
+						<td>planet</td>
+						<td><input id="planet" type="text"/></td>
+					</tr>
+					<tr>
+						<td><input type="submit" id="btn_agregar" value="Guardar"/></td>
+					</tr>
+					<tr>
+						<td><input type="button" id="btn_eliminar" value="Eliminar"/></td>
+					</tr>
+				</table>
+				<input id="id" type="hidden"/>
+			</form>
+		</div>
+		<div class="col-sm-offset-2 col-sm-12">
+				<div class="col-sm-offset-2 col-sm-8">					
+					<h3 class="text-center" th:text="${clase}"></h3>
+				</div>
+				<div class="table-responsive col-sm-12">
+					<table id="grilla_prueba" class="table table-bordered table-hover">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>Name</th>
+								<th>Height</th>
+								<th>Mass</th>
+								<th>Hair Color</th>
+								<th>Gender</th>
+								<th>Planet</th>
+							</tr>
+						</thead>
+						<tbody id="grilla_cuerpo">
+						</tbody>
+					</table>
+				</div>					
+		</div>		
+	</div>
+	
+	<footer th:fragment="footer" class="container">
+		<p>Prueba Avatar.</p>
+		<script th:src="@{/js/base/jquery-3.3.1.min.js}"></script>
+		<script th:src="@{/js/base/bootstrap.min.js}"></script>
+		<script th:src="@{/js/base/datatables.min.js}"></script>
+		<script>
+		var planetas = [];
+		
+		var controls_view = {
+			name: function () { return document.getElementById("name"); },
+			height: function () { return document.getElementById("height"); },
+			mass: function () { return document.getElementById("mass"); },
+			hair_color: function () { return document.getElementById("hair_color"); },
+			gender: function () { return document.getElementById("gender"); },
+			planet: function () { return document.getElementById("planet"); },
+			id: function () { return document.getElementById("id"); },
+			formulario_prueba: function () { return document.getElementById("formulario_prueba"); },
+			grilla_prueba: function () { return document.getElementById("grilla_prueba"); },
+			grilla_cuerpo: function () { return document.getElementById("grilla_cuerpo"); },
+			btn_eliminar: function () { return document.getElementById("btn_eliminar"); },
+			btn_agregar: function () { return document.getElementById("btn_agregar"); },
+		}
+		
+		//Al cargar la Pagina Web.
+		$(document).ready(function() {
+		    console.log( "ready!" );
+		    validar_planeta();
+		    cargar_grilla();	
+ 			$(controls_view.grilla_prueba()).on( 'click', 'tr',function () {
+				obtener_id_prueba(this);
+	  		});
+ 			$(controls_view.btn_eliminar()).on( 'click', function () { 
+ 				var id_prueba = $(controls_view.id()).val();
+ 				if(id_prueba > 0){
+ 	 				eliminar(id_prueba);
+ 	 				$(controls_view.formulario_prueba())[0].reset();	
+ 				}else{
+ 					return
+ 				}
+ 			});
+ 			$(controls_view.formulario_prueba()).submit(function(e) {
+ 			   try{
+ 				  if(planetas.indexOf($(controls_view.planet()).val()) != -1){
+ 		 				var data = {
+ 		 	 					  id: $(controls_view.id()).val(),
+ 		 	 					  name: $(controls_view.name()).val(),
+ 		 	 					  height: $(controls_view.height()).val(),
+ 		 	 					  mass: $(controls_view.mass()).val(),
+ 		 						  hair_color: $(controls_view.hair_color()).val(),
+ 		 						  gender: $(controls_view.gender()).val(),
+ 		 	 					  planet: $(controls_view.planet()).val(),
+ 		 	 			} 		 			
+ 		 			    $.ajax({
+ 		 			           type: "POST",
+ 		 			           url: "/persona",
+ 		 			           contentType : "application/json",
+ 		 			           data: JSON.stringify(data),
+ 		 			           success: function(data){
+ 		 			               console.log(data);
+ 		 			               //cargar_grilla();	
+ 		 			           }
+ 		 			    });
+ 		 			    e.preventDefault(); // avoid to execute the actual submit of the form.
+ 	 				}
+ 	 				else
+ 	 				{
+ 	 					 throw {
+ 	 					    name: "Error_message",
+ 	 					    message: "El nombre de planeta ingresado no existe."
+ 	 					}
+ 	 				}
+ 			    }
+ 			    catch(e){
+ 			        alert(e.name+" : "+e.message);
+ 			    }			
+			});
+		});	
+				
+		//CARGAR GRILLAR
+		function cargar_grilla(){
+			$.ajax({
+				type : "POST",
+				contentType : "application/json",
+				url : "/Lista",
+				dataType : 'json',
+				timeout : 100000,
+				success : function(data) {
+					$(controls_view.grilla_prueba()).DataTable( {
+					    data: data,
+						rowId: 'id',
+						retrieve: true,
+					    columns: [
+					        { data: 'id' },
+					        { data: 'name' },
+					        { data: 'height' },
+					        { data: 'mass' },
+					        { data: 'hair_color' },
+					        { data: 'gender' },
+					        { data: 'planet' }
+					    ]
+					} );	
+				},
+				done : function(e) {
+					console.log("DONE");
+				}
+			});	
+		}
+
+ 		function obtener_id_prueba(e){
+ 			var table = $('#grilla_prueba').DataTable();	
+ 		  	var id = table.row(e).id();
+ 		    cargar_prueba(id);
+ 		} 
+			
+		function cargar_prueba(id){
+			$.ajax({
+				type : "POST",
+				contentType : "application/json",
+				url : "/ObtenerPrueba",
+				data : id,
+				dataType : 'json',
+				timeout : 15000,
+				success : function(data) {
+					$(controls_view.id()).val(data.id);
+					$(controls_view.name()).val(data.name);
+				 	$(controls_view.height()).val(data.height);
+					$(controls_view.mass()).val(data.mass);
+					$(controls_view.hair_color()).val(data.hair_color);
+					$(controls_view.gender()).val(data.gender);
+					$(controls_view.planet()).val(data.planet);
+				},
+				done : function(e) {
+					console.log("DONE");
+				}
+			});	
+		}
+		
+		function eliminar(id){
+			$.ajax({
+				type : "POST",
+				contentType : "application/json",
+				url : "/Eliminar",
+				data : id,
+				dataType : 'json',
+				timeout : 15000,
+				success : function(data) {
+					console.log(data.mensaje);
+				},
+				done : function(e) {
+					console.log("DONE");
+				}
+			});	
+		}
+		
+		function validar_planeta(){
+			$.ajax({
+				type : "GET",
+				contentType : "application/json",
+				url : "https://swapi.co/api/planets/",
+				dataType : 'json',
+				timeout : 15000,
+				success : function(data) {
+					var cantidad_planetas = data.results.length;
+					for (var i = 0; i < cantidad_planetas; i++) {
+						planetas.push(data.results[i].name);
+					}
+					
+				},
+				done : function(e) {
+					console.log("DONE");
+				}
+			});		
+		}
+		</script>
+	</footer>
+</body>
+</html>
